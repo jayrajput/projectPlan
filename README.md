@@ -43,3 +43,12 @@ are either GUI based or command line and are much heavier than this script.
 This script is different from others as you have to use PYTHON to write your
 schedule and so is useful to someone who knows basic PYTHON.
 
+
+## License
+
+CC0 Public Domain - http://creativecommons.org/publicdomain/zero/1.0/
+
+
+## Contact me
+
+Contact jayrajput@gmail.com for any questions.
