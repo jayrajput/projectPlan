@@ -29,6 +29,8 @@ def getDurationEndDate(startDate, workInManDays):
     and end date.
     """
 
+    # Add your holidays here.
+    # TODO - find if there is a better way to input the holidays.
     holidays = [
         #    YYYY, M, DD
         date(2013, 8, 9 ), # Eid-ul-fitr
@@ -56,26 +58,16 @@ def getDurationEndDate(startDate, workInManDays):
         endDate       = nextDate
         workInManDays = workInManDays - 1
 
-# TODO: work is only supported as man days. Minimum work is 1 man day
-class Task:
-
+class SubTask:
     def __init__(self, data):
         self.data = dict(
             name      = None,
             work      = None,
-            subTasks  = [],
             deps      = [],
         )
         self.data.update(data)
-        if (len(self.data.get('subTasks')) != 0):
-            if (self.data['work'] is not None):
-                print ("Work: {}".format(self.data['work']))
-                raise ValueError("Work cannot be specified for summary task.")
 
     def getWork(self):
-        if self.data['work'] is None: self.data['work'] = 0
-        for subTask in self.data.get('subTasks'):
-            self.data['work'] = self.data['work'] + subTask.getWork()
         return self.data['work']
 
     def getDurationDays(self):
@@ -91,17 +83,7 @@ class Task:
         return startDate
 
     def getEndDate(self):
-        if len(self.data['subTasks']) == 0:
-            return getDurationEndDate(self.getStartDate(), self.data['work'])
-
-        # This is a summary task, so end date is equal to end date of last sub
-        # task
-        endDate = self.getStartDate()
-        for subTask in self.data['subTasks']:
-            subTaskEndDate = subTask.getEndDate()
-            if (subTaskEndDate > endDate):
-                endDate = subTaskEndDate
-        return endDate
+        return getDurationEndDate(self.getStartDate(), self.data['work'])
 
     def __str__(self):
         return "{name:<30} {startDate} {endDate} {duration:<10} {work:<10}".format(
@@ -112,24 +94,59 @@ class Task:
             work      = self.getWork()
         )
 
+# @TODO: work is only supported as man days. Minimum work is 1 man day
+
+# Inherit from SubTask.
+class SummaryTask(SubTask):
+    def __init__(self, data):
+        self.data = dict(
+            name      = None,
+            subTasks  = [],
+            deps      = [],
+        )
+        self.data.update(data)
+
+    def getWork(self):
+        """ Work is sum of work of all sub tasks """
+        work = 0
+        for subTask in self.data.get('subTasks'):
+            work = work + subTask.getWork()
+        return work
+
+    def getEndDate(self):
+        """ End date is equal to end date of last sub task """
+        endDate = self.getStartDate()
+        for subTask in self.data['subTasks']:
+            subTaskEndDate = subTask.getEndDate()
+            if (subTaskEndDate > endDate):
+                endDate = subTaskEndDate
+        return endDate
+
 if __name__ == '__main__':
     tasks = []
 
-    subTask1     = Task(dict(name = "SubTask1", work = 5))
-    subTask2     = Task(dict(name = "SubTask2", work = 25, deps = [subTask1]))
-    summaryTask1 = Task(dict(name = "SummaryTask1", subTasks = [subTask1, subTask2]))
+    subTask1     = SubTask(dict(name = "SubTask1", work = 5))
+    subTask2     = SubTask(dict(name = "SubTask2", work = 25, deps = [subTask1]))
+    summaryTask1 = SummaryTask(dict(name = "SummaryTask1", subTasks = [subTask1, subTask2]))
     tasks.append(summaryTask1)
     tasks.append(subTask1)
     tasks.append(subTask2)
 
-    subTask3     = Task(dict(name = "SubTask3", work = 5))
-    subTask4     = Task(dict(name = "SubTask4", work = 25))
-    summaryTask2 = Task(dict(name = "SummaryTask2", subTasks = [subTask3, subTask4]))
+    subTask3     = SubTask(dict(name = "SubTask3", work = 5))
+    subTask4     = SubTask(dict(name = "SubTask4", work = 25, deps = [subTask3]))
+    summaryTask2 = SummaryTask(
+        dict(
+            name = "SummaryTask2", 
+            subTasks = [
+                subTask3, 
+                subTask4
+            ],
+            deps = [summaryTask1]
+        )
+    )
     tasks.append(summaryTask2)
     tasks.append(subTask3)
     tasks.append(subTask4)
 
     for i in tasks:
         print(i)
-
-
