@@ -16,7 +16,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 # Project started on 01 Aug, '2013.
-PROJ_START_DATE = date(2013, 8, 1)
+PROJ_START_DATE = date.today()
 
 def getDurationEndDate(startDate, workInManDays):
     """
@@ -66,6 +66,10 @@ class SubTask:
             deps      = [],
         )
         self.data.update(data)
+        self.name  = self.data['name']
+        self.work  = self.data['work']
+        self.deps  = self.data['deps']
+        self.subTasks = []
 
     def getWork(self):
         return self.data['work']
@@ -75,7 +79,8 @@ class SubTask:
         return duration.days
 
     def getStartDate(self):
-        startDate = PROJ_START_DATE
+        if (self.name == None): return PROJ_START_DATE
+        startDate = getParentTask(self.name).getStartDate()
         for dep in self.data['deps']:
             depEndDatePlusOne = dep.getEndDate() + timedelta(days = 1)
             if (depEndDatePlusOne > startDate):
@@ -84,15 +89,6 @@ class SubTask:
 
     def getEndDate(self):
         return getDurationEndDate(self.getStartDate(), self.data['work'])
-
-    def __str__(self):
-        return "{name:<30} {startDate} {endDate} {duration:<10} {work:<10}".format(
-            name      = self.data['name'],
-            startDate = self.getStartDate(),
-            endDate   = self.getEndDate(),
-            duration  = self.getDurationDays(),
-            work      = self.getWork()
-        )
 
 # @TODO: work is only supported as man days. Minimum work is 1 man day
 
@@ -105,6 +101,9 @@ class SummaryTask(SubTask):
             deps      = [],
         )
         self.data.update(data)
+        self.name     = self.data['name']
+        self.subTasks = self.data['subTasks']
+        self.deps     = self.data['deps']
 
     def getWork(self):
         """ Work is sum of work of all sub tasks """
@@ -122,18 +121,65 @@ class SummaryTask(SubTask):
                 endDate = subTaskEndDate
         return endDate
 
-if __name__ == '__main__':
-    tasks = []
+# Task Manager - START
+# Wanted task manager to be a singleton and on doing google, suggestion was to
+# just used a bunch of functions. So implemented singleton using tasks global
+# variable and bunch of functions.
+tasks = []  # global list of tasks.
+def addTask(task):
+    tasks.append(task)
 
+def getTaskByName(name):
+    for task in tasks:
+        if task.name == name:
+            return task
+    return None
+
+def getParentTask(subTaskName):
+    for task in tasks:
+        for subTask in task.subTasks:
+            if subTask.name == subTaskName:
+                return task
+    # return an empty task indicating there is no parent.
+    return SubTask(dict())
+
+def printTasks():
+    print "{name:<30} {startDate} {endDate:<10} {duration:<10} {work:<10}".format(
+        name = "Name",
+        startDate = "Start Date",
+        endDate   = "End Date",
+        duration  = "Duration",
+        work      = "Work"
+    )
+    for task in sorted(tasks, key = lambda task: task.getStartDate()):
+        if len(task.subTasks) > 0:
+            print "{name:<30} {startDate} {endDate} {duration:<10} {work:<10}".format(
+                name      = task.data['name'],
+                startDate = task.getStartDate(),
+                endDate   = task.getEndDate(),
+                duration  = task.getDurationDays(),
+                work      = task.getWork()
+            )
+            for subTask in sorted(task.subTasks, key = lambda task: task.getStartDate()):
+                print "{name:<30} {startDate} {endDate} {duration:<10} {work:<10}".format(
+                    name      = "    " + subTask.data['name'],
+                    startDate = subTask.getStartDate(),
+                    endDate   = subTask.getEndDate(),
+                    duration  = subTask.getDurationDays(),
+                    work      = subTask.getWork()
+                )
+# Task Manager - END
+
+if __name__ == '__main__':
     subTask1     = SubTask(dict(name = "SubTask1", work = 5))
     subTask2     = SubTask(dict(name = "SubTask2", work = 25, deps = [subTask1]))
     summaryTask1 = SummaryTask(dict(name = "SummaryTask1", subTasks = [subTask1, subTask2]))
-    tasks.append(summaryTask1)
-    tasks.append(subTask1)
-    tasks.append(subTask2)
+    addTask(summaryTask1)
+    addTask(subTask1)
+    addTask(subTask2)
 
-    subTask3     = SubTask(dict(name = "SubTask3", work = 5))
-    subTask4     = SubTask(dict(name = "SubTask4", work = 25, deps = [subTask3]))
+    subTask3     = SubTask(dict(name = "SubTask3", work = 5, deps = [summaryTask1]))
+    subTask4     = SubTask(dict(name = "SubTask4", work = 25))
     summaryTask2 = SummaryTask(
         dict(
             name = "SummaryTask2", 
@@ -141,12 +187,10 @@ if __name__ == '__main__':
                 subTask3, 
                 subTask4
             ],
-            deps = [summaryTask1]
         )
     )
-    tasks.append(summaryTask2)
-    tasks.append(subTask3)
-    tasks.append(subTask4)
+    addTask(summaryTask2)
+    addTask(subTask3)
+    addTask(subTask4)
 
-    for i in tasks:
-        print(i)
+    printTasks()
