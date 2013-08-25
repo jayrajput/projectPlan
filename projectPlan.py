@@ -171,6 +171,30 @@ def printTasks():
 # Task Manager - END
 
 if __name__ == '__main__':
+    T(
+        name = "Main Project", 
+        start = "08/08/2013"
+        subTasks = [
+            { 
+                name = "T1",
+                subTasks = [
+                    name = "SubTask1",
+
+                ]
+            },
+        ]
+    ).addSubTs(
+        T(
+            name = "T1",
+        ).addSubTs(
+            T( name = "SubT1", dur  = 2),
+            T( name = "SubT2", dur  = 3, deps = "SubT1")
+        ),
+        T( name = "T2").addSubTs(
+            T( name = "SubT21", dur  = 3),
+            T( name = "SubT22", dur  = 4 deps = "SubT21")
+        )
+    )
     subTask1     = SubTask(dict(name = "SubTask1", work = 5))
     subTask2     = SubTask(dict(name = "SubTask2", work = 25, deps = [subTask1]))
     summaryTask1 = SummaryTask(dict(name = "SummaryTask1", subTasks = [subTask1, subTask2]))

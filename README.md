@@ -40,8 +40,8 @@ Ideas/Concepts:
 This python script will have the listed advantages without the disadvantages.
 Also, there are multiple open source project planning software available which
 are either GUI based or command line and are much heavier than this script.
-This script is different from others as you have to use PYTHON to write your
-schedule and so is useful to someone who knows basic PYTHON.
+This script is different from others as it takes ASCII text (in a specified
+    EBNF) and provides the output.
 
 
 ## License
